@@ -1,0 +1,16 @@
+Build artifacts
+build/
+*.exe
+*.o
+*.obj
+*.pdb
+
+IDE files
+.vs/
+.vscode/
+*.sln
+*.vcxproj
+
+System files
+.DS_Store
+Thumbs.db
