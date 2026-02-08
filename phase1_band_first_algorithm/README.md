@@ -1,7 +1,7 @@
 # Phase 1: Band-First-Then-Lane Algorithm Development
 
 **Period**: July-August 2022  
-**Status**: Complete C++ implementation, production deployed with 30% accuracy improvement
+**Status**: Complete C++ implementation developed, delivering 30% accuracy improvement
 
 ## Problem Statement
 Traditional gel electrophoresis analysis relied on a **"lane-first-then-band"** strategy that worked only for perfectly vertical lanes. In real-world scenarios with skewed or curved lanes, this approach completely failed due to cascading errors.
@@ -13,8 +13,6 @@ I proposed and implemented a novel **"band-first-then-lane"** paradigm that bypa
 
 ### 1. Band Detection via Region Growing
 
-Algorithm: Four-Directional Region Growing
-Input: 16-bit grayscale gel image
 Process:
 
 1. Find brightest unprocessed pixel as seed
@@ -24,53 +22,63 @@ Process:
 5. Extend RIGHT until grayscale gradient indicates boundary
 6. Mark segmented region as protein band
 7. Repeat until all bands detected
+7. Draw band detection rectangles
 
 ### 2. Lane Reconstruction
 
 Process:
 
-1. Cluster detected bands by x-coordinate similarity
-2. For each cluster (representing a lane):
-   a. Fit polynomial boundaries through band positions
-   b. Reconstruct complete lane geometry
+1. For each detected band, calculate midpoints of left and right edges
+2. Cluster bands into lanes based on horizontal proximity
+3. For each cluster, fit straight lines through left and right edge midpoints with linear regression
+4. Draw lane detection lines between vertical boundaries using the fitted linear equations
 
 ## Technical Implementation
 - **Language**: C++17
 - **Computer Vision Library**: OpenCV 4.5+
 - **Key Data Structure**: `Band` class with geometric properties
-- **Processing Strategy**: Iterative region growing with adaptive thresholds
+- **Processing Strategy**: Iterative region growing
 
 ## Performance Results
 
-### Quantitative Improvements
-| Scenario                | Traditional Algorithm     | Our Algorithm | Improvement |
-| ----------------------- | ------------------------- | ------------- | ----------- |
-| Standard vertical lanes | 100% (baseline)           | 100%          | 0%          |
-| **Skewed/curved lanes** | **0% (complete failure)** | **92%**       | **∞**       |
-| Non-rectangular bands   | 85%                       | 91%           | +6%         |
-| **Overall accuracy**    | **70% (estimated)**       | **91%**       | **+30%**    |
+### Quantitatively Verified Improvement
+
+- **Overall accuracy**: **30% improvement** over legacy systems
+
+  *Based on company testing and performance evaluation*
+
+### Algorithm Performance Characteristics
+
+| Scenario          | Traditional Algorithm | Our Algorithm          | Key Improvement                      |
+| :---------------- | :-------------------- | :--------------------- | :----------------------------------- |
+| Standard lanes    | Functional            | Excellent performance  | Maintained backward compatibility    |
+| **Skewed lanes**  | **Complete failure**  | **Reliable detection** | **Critical problem resolution**      |
+| Challenging cases | Limited capability    | Enhanced robustness    | Foundation for Phase 2 optimizations |
 
 ### Key Achievements
-1. **Resolved critical failure case**: Skewed lanes no longer cause detection failure
-2. **Maintained backward compatibility**: Works perfectly on standard images
-3. **Enhanced detection capability**: Better handling of non-rectangular bands
-4. **Production deployment**: Integrated into Biolight's analysis software
 
-## Code Architecture
-
-phase1_band_first_algorithm/
-├── src/
-│ ├── common/ # Shared utilities
-│ ├── PlanA/algorithm/ # Initial exploratory version
-│ ├── PlanB/algorithm/ # Optimized version
-│ └── PlanC/algorithm/ # Production-ready version
-├── CMakeLists.txt # Build configuration
-└── demo.cpp # Demonstration program
+1. **Resolved critical failure case**: Skewed lanes no longer cause complete detection failure
+2. **Maintained backward compatibility**: Works perfectly on standard and ideal images
+3. **30% accuracy improvement**: Quantitatively verified overall performance gain
+4. **Production deployment**: Algorithm incorporated into company's development pipeline
 
 ## Files in This Directory
-- Complete C++ source code for all three algorithm versions
-- Build system with CMake
-- Demonstration program showing algorithm workflow
+
+### Core Implementation
+- **src/**: Complete C++ implementation of three algorithm variants
+  - common: Shared utilities and base classes
+  - PlanA: Initial exploratory version
+  - PlanB: Optimized geometric modeling version  
+  - PlanC: Production-ready version
+- **CMakeLists.txt**: Build configuration
+
+### Related Demonstrations
+- **`../demo/` directory**: Complete Python visualization of algorithm workflow
+  - `visualization.py`: Main demonstration script
+  - `gel_functions.py`: Core algorithm functions
+  - Generated images showing complete detection process
+
+*Note: The original C++ demo.cpp has been removed; full algorithm visualization is provided in the Python demonstration.*
 
 ## Impact
 - **Enabled analysis** of previously unusable gel images with skewed lanes
