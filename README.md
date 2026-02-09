@@ -78,6 +78,7 @@ The demo generates 8 visualizations showing:
 
 ## Repository Structure
 
+```
 BioLight/
 ├── phase1_band_first_algorithm/  # Phase 1: C++ algorithm design
 │   ├── src/                      # Source code architecture
@@ -94,6 +95,7 @@ BioLight/
 │   ├── README.md                 # Demo-specific instructions
 │   └── images/                   # 8 generated result images
 └── README.md                     # Synthesis & academic relevance
+```
 
 **Code Availability**: 
 Phase 2-3 implementations are company property; this repository focuses on research documentation and a Python demonstration of the core algorithms.

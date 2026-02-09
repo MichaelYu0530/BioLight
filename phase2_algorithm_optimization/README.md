@@ -130,4 +130,5 @@ The complete implementation is available in the Python demo:
 
 ------
 
-*Part of a three-phase research journey: [Phase 1](https://../phase1_band_first_algorithm) • [Phase 3](https://../phase3_deep_learning_pilot)*
+*Part of a three-phase research journey: [Phase 1](../phase1_band_first_algorithm) • [Phase 3](../phase3_deep_learning_pilot)*
+

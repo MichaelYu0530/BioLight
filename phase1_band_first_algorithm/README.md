@@ -38,6 +38,7 @@ Process:
 - **Computer Vision Library**: OpenCV 4.5+
 - **Key Data Structure**: `Band` class with geometric properties
 - **Processing Strategy**: Iterative region growing
+- **Demonstration**: Complete runnable version available in Python (`../demo/`)
 
 ## Performance Results
 
@@ -70,7 +71,6 @@ Process:
   - PlanA: Initial exploratory version
   - PlanB: Optimized geometric modeling version  
   - PlanC: Production-ready version
-- **CMakeLists.txt**: Build configuration
 
 ### Related Demonstrations
 - **`../demo/` directory**: Complete Python visualization of algorithm workflow

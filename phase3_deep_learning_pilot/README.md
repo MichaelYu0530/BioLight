@@ -88,4 +88,4 @@ The work bridges classical computer vision with contemporary deep learning, prov
 
 ------
 
-*Part of a three-phase research journey: [Phase 1](https://../phase1_band_first_algorithm) • [Phase 2](https://../phase2_algorithm_optimization)*
+*Part of a three-phase research journey: [Phase 1](../phase1_band_first_algorithm) • [Phase 2](../phase2_algorithm_optimization)*
