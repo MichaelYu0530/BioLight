@@ -1,6 +1,39 @@
 import cv2
 import numpy as np
 
+# 初始化BGR相同的三通道图像
+def initialize_img(height, width):
+    max_bg_gray = 40 # 背景区域最大灰度值
+    
+    # 创建灰度值有一定波动的单通道
+    gray_channel = np.random.randint(0, max_bg_gray, (height, width), np.uint8)
+    # 扩展为BGR相同的三通道
+    img = cv2.merge([gray_channel, gray_channel, gray_channel])
+    
+    return img
+
+# 改变图像中指定区域内的灰度值为固定值或者区间内的随机值
+def change_area_gray_value(img, x1, x2, y1, y2, value = -1, interval = [-1, -1]):
+    # 确保坐标顺序正确
+    x1, x2 = sorted([x1, x2])
+    y1, y2 = sorted([y1, y2])
+    # 避免处理区域为一列或一行的情况时的报错
+    x2, y2 = x2 + 1, y2 + 1
+
+    region = img[y1: y2, x1: x2] # 截取出目标区域
+    
+    if value >= 0: # 改变区域内灰度值为固定值
+        region[:, :, 0] = value
+        region[:, :, 1] = value
+        region[:, :, 2] = value
+        
+    if len(interval) == 2 and interval[0] >= 0 and interval[1] >= 0: # 改变区域内灰度值为区间内随机数
+        min_gray, max_gray = sorted(interval)
+        gray_values = np.random.randint(min_gray, max_gray, (y2 - y1, x2 - x1), dtype=np.uint8)
+        region[:, :, 0] = gray_values
+        region[:, :, 1] = gray_values
+        region[:, :, 2] = gray_values
+
 # 用径向渐变填充条带内部，中心点坐标需输入，中心最亮，边缘渐暗，参数坐标格式均为(x, y)
 def fill_in_band(img, center = (0, 0), point_list = [], border_list = [], internal_list = []):
     if len(point_list) > 0: # 输入了顶点列表，要处理的是四边形条带
@@ -69,8 +102,15 @@ def fill_in_band(img, center = (0, 0), point_list = [], border_list = [], intern
             img[y, x] = (gray, gray, gray)
 
 # 为矩形或一般四边形条带添加锯齿边缘
-def add_jagged_border(img, point_list):
+def add_jagged_border(img, point_list, is_few_bands = True):
+    # 若图像中条带数较少，则可将锯齿边缘延长得更多些
+    max_extend, corner_extend = 12, 6
+    if is_few_bands == True:
+        max_extend, corner_extend = 20, 10
+    min_extend = max_extend // 3
+    
     min_gray_value, max_gray_value = 60, 120 # 锯齿边缘的灰度值范围
+    interval = [min_gray_value, max_gray_value]
     
     if len(point_list) == 2: # 输入的是矩形的左上、右下顶点
         corner1_x, corner1_y = point_list[0]
@@ -80,35 +120,39 @@ def add_jagged_border(img, point_list):
         y = corner1_y
         for x in range(corner1_x, corner2_x):
             if (x - corner1_x) % 5 == 0: # 每5个像素点改变一次锯齿长度，减少尖锐感
-                extend = np.random.randint(5, 10) # 向外延伸像素点数，5-9随机整数
-            img[y - extend: y, x] = np.random.randint(min_gray_value, max_gray_value, (extend, 3), np.uint8)
+                extend = np.random.randint(min_extend, max_extend) # 向外延伸像素点数
+            change_area_gray_value(img, x, x, y - extend, y, interval=interval)
         # 为条带下侧边添加锯齿边缘
         y = corner2_y
         for x in range(corner1_x, corner2_x):
             if (x - corner1_x) % 5 == 0: # 每5个像素点改变一次锯齿长度，减少尖锐感
-                extend = np.random.randint(5, 10) # 向外延伸像素点数，5-9随机整数
-            img[y: y + extend, x] = np.random.randint(min_gray_value, max_gray_value, (extend, 3), np.uint8)
+                extend = np.random.randint(min_extend, max_extend) # 向外延伸像素点数
+            change_area_gray_value(img, x, x, y + extend, y, interval=interval)
         # 为条带左侧边添加锯齿边缘
         x = corner1_x
         for y in range(corner1_y, corner2_y):
             if (y - corner1_y) % 5 == 0: # 每5个像素点改变一次锯齿长度，减少尖锐感
-                extend = np.random.randint(5, 10) # 向外延伸像素点数，5-9随机整数
-            img[y, x - extend: x] = np.random.randint(min_gray_value, max_gray_value, (extend, 3), np.uint8)
+                extend = np.random.randint(min_extend, max_extend) # 向外延伸像素点数
+            change_area_gray_value(img, x - extend, x, y, y, interval=interval)
         # 为条带右侧边添加锯齿边缘
         x = corner2_x
         for y in range(corner1_y, corner2_y):
             if (y - corner1_y) % 5 == 0: # 每5个像素点改变一次锯齿长度，减少尖锐感
-                extend = np.random.randint(5, 10) # 向外延伸像素点数，5-9随机整数
-            img[y, x: x + extend] = np.random.randint(min_gray_value, max_gray_value, (extend, 3), np.uint8)
-            
+                extend = np.random.randint(min_extend, max_extend) # 向外延伸像素点数
+            change_area_gray_value(img, x + extend, x, y, y, interval=interval)
+        
         # 处理左上顶点
-        img[corner1_y - 7: corner1_y, corner1_x - 7: corner1_x] = np.random.randint(min_gray_value, max_gray_value, (7, 7, 3), np.uint8)
+        change_area_gray_value(img, 
+            corner1_x - corner_extend, corner1_x, corner1_y - corner_extend, corner1_y, interval=interval)
         # 处理左下顶点
-        img[corner2_y: corner2_y + 7, corner1_x - 7: corner1_x] = np.random.randint(min_gray_value, max_gray_value, (7, 7, 3), np.uint8)
+        change_area_gray_value(img, 
+            corner1_x - corner_extend, corner1_x, corner2_y + corner_extend, corner2_y, interval=interval)
         # 处理右上顶点
-        img[corner1_y - 7: corner1_y, corner2_x: corner2_x + 7] = np.random.randint(min_gray_value, max_gray_value, (7, 7, 3), np.uint8)
+        change_area_gray_value(img, 
+            corner2_x + corner_extend, corner2_x, corner1_y - corner_extend, corner1_y, interval=interval)
         # 处理右下顶点
-        img[corner2_y: corner2_y + 7, corner2_x: corner2_x + 7] = np.random.randint(min_gray_value, max_gray_value, (7, 7, 3), np.uint8)
+        change_area_gray_value(img, 
+            corner2_x + corner_extend, corner2_x, corner2_y + corner_extend, corner2_y, interval=interval)
     
     if len(point_list) == 4: # 输入的是一般四边形的四个顶点，左上顶点开始沿顺时针顺序排列
         pt1, pt2, pt3, pt4 = point_list
@@ -129,8 +173,8 @@ def add_jagged_border(img, point_list):
                 for j in range(len(border_list)):
                     x, y = border_list[j]
                     if j % 5 == 0: # 每5个像素点改变一次锯齿长度，减少尖锐感
-                        extend = np.random.randint(8, 16) # 向外延伸像素点数，5-9随机整数
-                    img[y - extend: y, x] = np.random.randint(min_gray_value, max_gray_value, (extend, 3), np.uint8)
+                        extend = np.random.randint(min_extend, max_extend) # 向外延伸像素点数
+                    change_area_gray_value(img, x, x, y - extend, y, interval=interval)
             # 为条带下侧边添加锯齿边缘
             if i == 2:
                 # 处理相对水平线时遍历x得到y，int()向下取整保证点在条带内部
@@ -138,8 +182,8 @@ def add_jagged_border(img, point_list):
                 for j in range(len(border_list)):
                     x, y = border_list[j]
                     if j % 5 == 0: # 每5个像素点改变一次锯齿长度，减少尖锐感
-                        extend = np.random.randint(8, 16) # 向外延伸像素点数，5-9随机整数
-                    img[y: y + extend, x] = np.random.randint(min_gray_value, max_gray_value, (extend, 3), np.uint8)
+                        extend = np.random.randint(min_extend, max_extend) # 向外延伸像素点数
+                    change_area_gray_value(img, x, x, y + extend, y, interval=interval)
             # 为条带右侧边添加锯齿边缘
             if i == 1:
                 # 处理相对竖直线时遍历y得到x，int()向下取整保证点在条带内部
@@ -147,8 +191,8 @@ def add_jagged_border(img, point_list):
                 for j in range(len(border_list)):
                     x, y = border_list[j]
                     if j % 5 == 0: # 每5个像素点改变一次锯齿长度，减少尖锐感
-                        extend = np.random.randint(8, 16) # 向外延伸像素点数，5-9随机整数
-                    img[y, x: x + extend] = np.random.randint(min_gray_value, max_gray_value, (extend, 3), np.uint8)
+                        extend = np.random.randint(min_extend, max_extend) # 向外延伸像素点数
+                    change_area_gray_value(img, x + extend, x, y, y, interval=interval)
             # 为条带左侧边添加锯齿边缘
             if i == 3:
                 # 处理相对竖直线时遍历y得到x，int() + 1向上取整保证点在条带内部
@@ -156,19 +200,24 @@ def add_jagged_border(img, point_list):
                 for j in range(len(border_list)):
                     x, y = border_list[j]
                     if j % 5 == 0: # 每5个像素点改变一次锯齿长度，减少尖锐感
-                        extend = np.random.randint(8, 16) # 向外延伸像素点数，5-9随机整数
-                    img[y, x - extend: x] = np.random.randint(min_gray_value, max_gray_value, (extend, 3), np.uint8)
+                        extend = np.random.randint(min_extend, max_extend) # 向外延伸像素点数
+                    change_area_gray_value(img, x - extend, x, y, y, interval=interval)
+        
         # 处理左上顶点
-        img[pt1[1] - 12: pt1[1], pt1[0] - 12: pt1[0]] = np.random.randint(min_gray_value, max_gray_value, (12, 12, 3), np.uint8)
+        change_area_gray_value(img, 
+            pt1[0] - corner_extend, pt1[0], pt1[1] - corner_extend, pt1[1], interval=interval)
         # 处理右上顶点
-        img[pt2[1] - 12: pt2[1], pt2[0]: pt2[0] + 12] = np.random.randint(min_gray_value, max_gray_value, (12, 12, 3), np.uint8)
+        change_area_gray_value(img, 
+            pt2[0] + corner_extend, pt2[0], pt2[1] - corner_extend, pt2[1], interval=interval)
         # 处理右下顶点
-        img[pt3[1]: pt3[1] + 12, pt3[0]: pt3[0] + 12] = np.random.randint(min_gray_value, max_gray_value, (12, 12, 3), np.uint8)
+        change_area_gray_value(img, 
+            pt3[0] + corner_extend, pt3[0], pt3[1] + corner_extend, pt3[1], interval=interval)
         # 处理左下顶点
-        img[pt4[1]: pt4[1] + 12, pt4[0] - 12: pt4[0]] = np.random.randint(min_gray_value, max_gray_value, (12, 12, 3), np.uint8)
+        change_area_gray_value(img, 
+            pt4[0] - corner_extend, pt4[0], pt4[1] + corner_extend, pt4[1], interval=interval)
 
 # 构建理想情况下的矩形条带，含内部渐变灰度值，锯齿边缘
-def build_regular_bands(img, rect_band_corner1_list, rect_band_corner2_list):
+def build_regular_bands(img, rect_band_corner1_list, rect_band_corner2_list, is_few_bands = True):
     center_list = []
     for i in range(len(rect_band_corner1_list)):
         corner1 = rect_band_corner1_list[i]
@@ -185,7 +234,7 @@ def build_regular_bands(img, rect_band_corner1_list, rect_band_corner2_list):
         center_list.append(center)
         
         fill_in_band(img, center=center, point_list=point_list)
-        add_jagged_border(img, point_list=point_list)
+        add_jagged_border(img, point_list=point_list, is_few_bands=is_few_bands)
     
     if len(center_list) == 1:
         return center_list[0]
@@ -246,7 +295,7 @@ def detect_rect_bands(img, center_list, is_guide_line = False):
     return detect_corner1_list, detect_corner2_list
 
 # 依据同泳道内条带的同侧边中点，做线性拟合得到泳道检测线
-def draw_lanes(img, detect_corner1_list, detect_corner2_list):
+def fit_lanes(img, detect_corner1_list, detect_corner2_list):
     mid_point1_list = [] # 存储条带左侧边中点的列表
     mid_point2_list = [] # 存储条带右侧边中点的列表
     for i in range(len(detect_corner1_list)):
@@ -288,11 +337,11 @@ def draw_lanes(img, detect_corner1_list, detect_corner2_list):
         cv2.line(img, (min_x, min_y), (max_x, max_y), (255, 191, 0), 2)
 
 # 构建两个非常规的条带（一般四边形和不规则图形），含内部渐变灰度值
-def build_irregular_bands(img, center_pair, point_list):
+def build_irregular_bands(img, center_pair, point_list, is_few_bands = True):
     # 填充一般四边形条带的内部灰度值
     poly_center = center_pair[0] # 一般四边形条带的中心点
     fill_in_band(img, center=poly_center, point_list=point_list)
-    add_jagged_border(img, point_list)
+    add_jagged_border(img, point_list, is_few_bands=is_few_bands)
     
     # 填充不规则图形条带的内部灰度值
     tooth_center = center_pair[1] # 不规则图形（牙齿状）条带的中心点
@@ -350,7 +399,7 @@ def get_border_points(img, threshold):
         gray_img = img.copy()
     
     # 创建内部掩码
-    internal_mask = (gray_img > threshold).astype(np.uint8) * 255
+    internal_mask = (gray_img >= threshold).astype(np.uint8) * 255
     
     # 获取内部点的坐标
     internal_y_list, internal_x_list = np.where(internal_mask == 255)
@@ -366,7 +415,7 @@ def get_border_points(img, threshold):
         # 检查上下左右是否至少有一个方向没有内部点
         has_external_neighbor = False
         for dx, dy in directions:
-            neighbor = (x + dx, y + dy)
+            neighbor = (x + dx * 1, y + dy * 1)
             if neighbor not in internal_set:
                 has_external_neighbor = True
                 break
@@ -396,7 +445,7 @@ def sort_border_points(points):
         for point in remaining_points:
             dx = point[0] - current_point[0]
             dy = point[1] - current_point[1]
-            dist = dx*dx + dy*dy  # 使用平方距离避免开方
+            dist = dx * dx + dy * dy  # 使用平方距离避免开方
             
             if dist < min_distance and dist > 0:
                 min_distance = dist
